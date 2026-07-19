@@ -1,0 +1,6 @@
+main: de.linzn.growatt.GrowattPlugin
+name: growatt
+version: ${project.version}
+depend: [ web-api ]
+buildJobName: ${buildServer.jobName}
+buildNumber: ${buildServer.buildNumber}
