@@ -34,7 +34,7 @@ public class GrowattManager {
         this.plugin = plugin;
         this.growattClientApi = new GrowattClientApi(token);
         this.deviceSerialNumber = this.plugin.getDefaultConfig().getString("growatt.deviceSerialNumber");
-        STEMApp.getInstance().getScheduler().runRepeatScheduler(this.plugin, this::poll, 2, 2, TimeUnit.MINUTES);
+        STEMApp.getInstance().getScheduler().runRepeatScheduler(this.plugin, this::poll, 2, 3, TimeUnit.MINUTES);
     }
 
 
