@@ -37,6 +37,11 @@ public class GrowattWebApi extends RequestInterface {
             data.put("acPower", minDeviceRealTimeData.getPac());
             data.put("gridExportPower", minDeviceRealTimeData.getPacToGridTotal());
             data.put("gridImportPower", minDeviceRealTimeData.getPowerOfGridTake());
+            data.put("batteryChargeEnergyToday", minDeviceRealTimeData.getEchargeToday());
+            data.put("gridExportEnergyToday",minDeviceRealTimeData.getEtoGridToday());
+            data.put("gridImportEnergyToday",minDeviceRealTimeData.getEtoUserToday());
+            data.put("pvEnergyToday",minDeviceRealTimeData.getEpvTotalToday());
+            data.put("localLoadEnergyToday",minDeviceRealTimeData.getElocalLoadToday());
 
             apiResponse.getJSONObject().put("data", data);
             apiResponse.getJSONObject().put("lastSucessPollDate", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.growattPlugin.getGrowattManager().getLastSucessPollDate()));
