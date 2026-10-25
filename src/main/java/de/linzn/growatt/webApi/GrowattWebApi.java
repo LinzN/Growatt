@@ -1,9 +1,9 @@
 package de.linzn.growatt.webApi;
 
 import com.sun.net.httpserver.HttpExchange;
+import de.linzn.growatt.GrowattManager;
 import de.linzn.growatt.GrowattPlugin;
 import de.linzn.growattJavaApi.devices.min.MinDeviceRealTimeData;
-import de.linzn.webapi.WebApiPlugin;
 import de.linzn.webapi.core.ApiResponse;
 import de.linzn.webapi.core.HttpRequestClientPayload;
 import de.linzn.webapi.modules.RequestInterface;
@@ -14,7 +14,7 @@ import java.text.SimpleDateFormat;
 
 public class GrowattWebApi extends RequestInterface {
 
-    private GrowattPlugin growattPlugin;
+    private final GrowattPlugin growattPlugin;
     public GrowattWebApi(GrowattPlugin growattPlugin) {
         this.growattPlugin = growattPlugin;
     }
@@ -23,9 +23,10 @@ public class GrowattWebApi extends RequestInterface {
     public Object callHttpEvent(HttpExchange httpExchange, HttpRequestClientPayload httpRequestClientPayload) throws IOException {
         ApiResponse apiResponse = new ApiResponse();
 
-        MinDeviceRealTimeData minDeviceRealTimeData = this.growattPlugin.getGrowattManager().getMinDeviceRealTimeData();
+        GrowattManager.Snapshot snapshot = this.growattPlugin.getGrowattManager().getSnapshot();
 
-        if(minDeviceRealTimeData != null){
+        if (snapshot != null) {
+            MinDeviceRealTimeData minDeviceRealTimeData = snapshot.data();
             JSONObject data = new JSONObject();
             data.put("time", minDeviceRealTimeData.getTime());
             data.put("batteryState", minDeviceRealTimeData.getBatteryState());
@@ -44,7 +45,7 @@ public class GrowattWebApi extends RequestInterface {
             data.put("localLoadEnergyToday",minDeviceRealTimeData.getElocalLoadToday());
 
             apiResponse.getJSONObject().put("data", data);
-            apiResponse.getJSONObject().put("lastSucessPollDate", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(this.growattPlugin.getGrowattManager().getLastSucessPollDate()));
+            apiResponse.getJSONObject().put("lastSucessPollDate", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(snapshot.date()));
         } else {
             apiResponse.getJSONObject().put("data", JSONObject.NULL);
             apiResponse.getJSONObject().put("lastSucessPollDate", JSONObject.NULL);

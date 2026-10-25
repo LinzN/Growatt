@@ -16,27 +16,27 @@ import de.linzn.growattJavaApi.GrowattClientApi;
 import de.linzn.growattJavaApi.devices.min.MinDeviceRealTimeData;
 import de.linzn.growattJavaApi.exceptions.GrowattApiException;
 import de.linzn.growattJavaApi.exceptions.GrowattDeviceNotFoundException;
-import de.linzn.stem.STEMApp;
 import de.linzn.stem.modules.pluginModule.STEMPlugin;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Polls the Growatt inverter every five minutes. Data and poll time are stored together,
+ * so readers never see data without a matching timestamp.
+ */
 public class GrowattManager {
     private final STEMPlugin plugin;
     private final GrowattClientApi growattClientApi;
     private final String deviceSerialNumber;
+    private volatile Snapshot snapshot = null;
 
-    private Date lastSucessPollDate = null;
-    private MinDeviceRealTimeData minDeviceRealTimeData = null;
-
-    public GrowattManager(STEMPlugin plugin, String token){
+    public GrowattManager(STEMPlugin plugin, String token) {
         this.plugin = plugin;
         this.growattClientApi = new GrowattClientApi(token);
         this.deviceSerialNumber = this.plugin.getDefaultConfig().getString("growatt.deviceSerialNumber");
-        STEMApp.getInstance().getScheduler().runRepeatScheduler(this.plugin, this::poll, 2, 5, TimeUnit.MINUTES);
+        this.plugin.getStemApi().scheduler().runRepeating(this::poll, 2, 5, TimeUnit.MINUTES);
     }
-
 
     public GrowattClientApi getGrowattClientApi() {
         return growattClientApi;
@@ -44,19 +44,33 @@ public class GrowattManager {
 
     public void poll() {
         try {
-            this.minDeviceRealTimeData = this.growattClientApi.getMinDeviceRealTimeData(this.deviceSerialNumber);
-            this.lastSucessPollDate = new Date();
-            STEMApp.LOGGER.DEBUG("New growatt device data for " + this.deviceSerialNumber);
+            MinDeviceRealTimeData data = this.growattClientApi.getMinDeviceRealTimeData(this.deviceSerialNumber);
+            if (data != null) {
+                this.snapshot = new Snapshot(data, new Date());
+                this.plugin.getPluginLogger().debug("New growatt device data for " + this.deviceSerialNumber);
+            }
         } catch (GrowattApiException | GrowattDeviceNotFoundException e) {
-            STEMApp.LOGGER.ERROR(e);
+            this.plugin.getPluginLogger().error("Growatt poll failed for " + this.deviceSerialNumber, e);
         }
     }
 
     public MinDeviceRealTimeData getMinDeviceRealTimeData() {
-        return minDeviceRealTimeData;
+        Snapshot current = this.snapshot;
+        return current == null ? null : current.data();
     }
 
     public Date getLastSucessPollDate() {
-        return lastSucessPollDate;
+        Snapshot current = this.snapshot;
+        return current == null ? null : current.date();
+    }
+
+    /**
+     * @return latest data together with its poll time, or null if nothing was received yet
+     */
+    public Snapshot getSnapshot() {
+        return this.snapshot;
+    }
+
+    public record Snapshot(MinDeviceRealTimeData data, Date date) {
     }
 }
